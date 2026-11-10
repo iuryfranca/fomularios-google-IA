@@ -1,0 +1,84 @@
+Guia de Referência: Criando Quizzes com a Google Forms API
+Para transformar um formulário comum em um Quiz, você precisará consultar três áreas principais da documentação oficial: FormSettings, Grading e CorrectAnswers.
+
+1. Transformando o Formulário em Quiz (FormSettings)
+Por padrão, todo formulário criado via API nasce como uma pesquisa comum. Para ativar as funções de teste, você precisa atualizar as configurações gerais do formulário (isQuiz = True).
+
+Onde olhar na documentação: Procure por forms.v1 -> Form -> FormSettings.
+
+Como aplicar no código: Você deve enviar uma requisição updateSettings dentro do método batchUpdate.
+
+Python
+# Trecho de exemplo para a requisição batchUpdate:
+update_settings_request = {
+    "requests": [
+        {
+            "updateSettings": {
+                "settings": {
+                    "quizSettings": {
+                        "isQuiz": True  # <--- Isso ativa o modo Quiz
+                    }
+                },
+                "updateMask": "quizSettings.isQuiz"
+            }
+        }
+    ]
+}
+2. Configurando Perguntas com Pontos e Respostas (Grading)
+Depois que o formulário sabe que é um Quiz, cada pergunta (item) do tipo questionItem precisa receber um objeto de "Correção" (Grading) que define quantos pontos ela vale e quais alternativas estão corretas.
+
+Onde olhar na documentação: Procure por Item -> QuestionItem -> Question -> Grading.
+
+Onde definir as respostas: Procure por CorrectAnswers -> CorrectAnswer.
+
+Exemplo Prático: Pergunta de Múltipla Escolha (Quiz)
+Veja como estruturar o JSON dentro do seu batchUpdate para criar uma pergunta de teste:
+
+Python
+quiz_question_request = {
+    "requests": [
+        {
+            "createItem": {
+                "item": {
+                    "title": "Qual é a capital do Brasil?",
+                    "questionItem": {
+                        "question": {
+                            "required": True,
+                            # 1. Define o tipo da pergunta e as opções
+                            "choiceQuestion": {
+                                "type": "RADIO",
+                                "options": [
+                                    {"value": "Rio de Janeiro"},
+                                    {"value": "São Paulo"},
+                                    {"value": "Brasília"} # Esta será a correta
+                                ]
+                            },
+                            # 2. Define a regra de pontuação e resposta correta
+                            "grading": {
+                                "pointValue": 10, # Vale 10 pontos
+                                "correctAnswers": {
+                                    "answers": [
+                                        {"value": "Brasília"} # Deve ser igual ao texto da opção
+                                    ]
+                                },
+                                # Opcional: Feedback para quando o usuário errar/acertar
+                                "whenWrong": {
+                                    "text": "Incorreto. A capital do Brasil foi transferida para Brasília em 1960."
+                                }
+                            }
+                        }
+                    }
+                },
+                "location": {"index": 0}
+            }
+        }
+    ]
+}
+3. Links Úteis da Documentação Oficial
+Para expandir seu script e criar testes mais complexos, guarde estes links de referência da documentação do Google:
+
+Guia de Início Rápido para Quizzes (Em Inglês): Explicação conceitual de como as notas funcionam no ecossistema Google.
+
+Referência do Objeto Grading: Detalhes sobre como adicionar feedbacks personalizados (whenRight e whenWrong).
+
+Tipos de Escolhas (ChoiceQuestion): Mostra a diferença na estrutura se você quiser usar caixas de seleção (onde o usuário pode marcar mais de uma resposta correta) mudando o tipo de RADIO para CHECKBOX.
